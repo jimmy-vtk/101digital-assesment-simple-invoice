@@ -42,6 +42,10 @@ describe('SimpleInvoice API (e2e)', () => {
     await testApp?.close();
   });
 
+  it('reports health without authentication', async () => {
+    await api().get('/health').expect(200, { status: 'ok' });
+  });
+
   describe('authentication', () => {
     it('rejects invalid credentials', async () => {
       const res = await api()

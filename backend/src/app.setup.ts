@@ -9,6 +9,13 @@ import { validationExceptionFactory } from './common/validation/validation-excep
 export function configureApp(app: INestApplication): void {
   const config = app.get(ConfigService);
 
+  // Behind the nginx reverse proxy (Docker), trust X-Forwarded-For from private
+  // networks so req.ip (used by the login rate limiter) is the real client.
+  const httpAdapter = app.getHttpAdapter();
+  if (httpAdapter.getType() === 'express') {
+    httpAdapter.getInstance().set('trust proxy', 'loopback, linklocal, uniquelocal');
+  }
+
   app.use(helmet());
   const origins = config.get<string>('CORS_ORIGIN');
   app.enableCors({

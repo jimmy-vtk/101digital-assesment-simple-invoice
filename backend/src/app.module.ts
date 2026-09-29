@@ -4,6 +4,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { EnvironmentVariables, validateEnv } from './config/env.validation';
+import { HealthController } from './health/health.controller';
 import { buildDataSourceOptions } from './database/typeorm.config';
 import { InvoicesModule } from './invoices/invoices.module';
 import { UsersModule } from './users/users.module';
@@ -28,5 +29,6 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     InvoicesModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}

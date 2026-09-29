@@ -15,13 +15,13 @@
     "migration:run": "npm run typeorm -- migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
     "migration:generate": "npm run typeorm -- migration:generate",
-    "migration:run:prod": "typeorm -d dist/database/data-source.js migration:run",
     "seed": "ts-node src/database/seed/seed.ts",
     "seed:prod": "node dist/database/seed/seed.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
-    "test:e2e": "jest --config ./test/jest-e2e.json --runInBand"
+    "test:e2e": "jest --config ./test/jest-e2e.json --runInBand",
+    "migrate:prod": "node dist/database/migrate.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",

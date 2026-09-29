@@ -1,0 +1,66 @@
+# SimpleInvoice: database, API and web app with one command:
+#   docker compose up --build
+#
+# Every setting can be overridden with environment variables or a `.env`
+# file next to this one (see .env.example). The defaults are for local
+# development only; set real secrets for any shared deployment.
+
+name: simpleinvoice
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-simpleinvoice}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-simpleinvoice}
+      POSTGRES_DB: ${DB_NAME:-simpleinvoice}
+    ports:
+      # Published for running the backend outside Docker; 5433 avoids a local Postgres on 5432.
+      - "${DB_HOST_PORT:-5433}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME:-simpleinvoice}
+      DB_PASSWORD: ${DB_PASSWORD:-simpleinvoice}
+      DB_NAME: ${DB_NAME:-simpleinvoice}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-only-jwt-secret-change-me-0123456789}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-3600}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
+      # Migrations always run on start; seeding is idempotent and can be disabled.
+      SEED_ON_START: ${SEED_ON_START:-true}
+      SEED_USER_EMAIL: ${SEED_USER_EMAIL:-reviewer@simpleinvoice.dev}
+      SEED_USER_PASSWORD: ${SEED_USER_PASSWORD:-Password123!}
+      SEED_USER_FULLNAME: ${SEED_USER_FULLNAME:-Reviewer}
+    ports:
+      # Direct API access, including Swagger UI at /api/docs.
+      - "${API_PORT:-3000}:3000"
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      # The web app; it proxies /api to the backend.
+      - "${WEB_PORT:-8080}:80"
+
+volumes:
+  db-data:
