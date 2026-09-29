@@ -5,8 +5,6 @@
 # file next to this one (see .env.example). The defaults are for local
 # development only; set real secrets for any shared deployment.
 
-name: simpleinvoice
-
 services:
   db:
     image: postgres:16-alpine
