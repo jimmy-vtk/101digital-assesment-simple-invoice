@@ -2,12 +2,13 @@
 #   docker compose up --build
 #
 # Every setting can be overridden with environment variables or a `.env`
-# file next to this one (see .env.example). The defaults are for local
-# development only; set real secrets for any shared deployment.
+# file next to this one (see .env.example). No secrets are stored here:
+# if JWT_SECRET is not provided, the backend generates a random one at
+# startup. The database and demo-login defaults are for local use only.
 
 services:
   db:
-    image: postgres:16-alpine
+    build: ./db
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USERNAME:-simpleinvoice}
@@ -18,11 +19,6 @@ services:
       - "${DB_HOST_PORT:-5433}:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
 
   backend:
     build: ./backend
@@ -38,7 +34,8 @@ services:
       DB_USERNAME: ${DB_USERNAME:-simpleinvoice}
       DB_PASSWORD: ${DB_PASSWORD:-simpleinvoice}
       DB_NAME: ${DB_NAME:-simpleinvoice}
-      JWT_SECRET: ${JWT_SECRET:-local-dev-only-jwt-secret-change-me-0123456789}
+      # Empty = generated at startup (sessions then end when the API restarts).
+      JWT_SECRET: ${JWT_SECRET:-}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-3600}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
       # Migrations always run on start; seeding is idempotent and can be disabled.

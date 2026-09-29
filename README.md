@@ -34,7 +34,7 @@ docker compose up --build        # legacy Compose: docker-compose up --build
 
 Then open **http://localhost:8080**.
 
-On first start the backend waits for PostgreSQL, applies migrations and seeds the reviewer account plus sample invoices, then the web app starts. No `.env` file is needed. Every setting has a working default, and all of them can be overridden (see [Configuration](#configuration)).
+On first start the backend waits for PostgreSQL, applies migrations and seeds the reviewer account plus sample invoices, then the web app starts. No `.env` file is needed: every setting has a working default and can be overridden (see [Configuration](#configuration)). No secret is stored in the repository. If `JWT_SECRET` is not set, the backend generates a random one each time it starts.
 
 ```bash
 docker compose down        # stop (data is kept in the db-data volume)
@@ -90,6 +90,7 @@ When running without Docker: API on `3000`, Vite dev server on `5173`.
 │   │   └── config/           environment validation
 │   ├── test/                 e2e tests (real PostgreSQL via Testcontainers)
 │   └── Dockerfile
+├── db/                       PostgreSQL image (Dockerfile)
 ├── frontend/                 React SPA
 │   ├── src/
 │   │   ├── api/              typed API client (axios) and endpoints
@@ -184,7 +185,7 @@ All environment-specific values come from environment variables. Nothing sensiti
 | --- | --- | --- |
 | `PORT` | `3000` | API port |
 | `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_NAME` | required | PostgreSQL connection |
-| `JWT_SECRET` | required | At least 32 characters |
+| `JWT_SECRET` | required (Docker: generated if empty) | At least 32 characters. In Docker, leaving it empty makes the container generate a random secret at each start |
 | `JWT_EXPIRES_IN` | `3600` | Access-token lifetime in seconds |
 | `CORS_ORIGIN` | any origin | Comma-separated allowed origins |
 | `SEED_USER_EMAIL` / `SEED_USER_PASSWORD` / `SEED_USER_FULLNAME` | required / required / `Reviewer` | Reviewer account created by the seed |
@@ -192,7 +193,7 @@ All environment-specific values come from environment variables. Nothing sensiti
 | `VITE_API_BASE_URL` | `/api` | Frontend: API base URL seen by the browser |
 | `VITE_DEV_API_PROXY_TARGET` | `http://localhost:3000` | Frontend dev only: where Vite proxies `/api` |
 
-`docker-compose.yml` ships development defaults, including a JWT secret, so that `docker compose up` needs no setup. **Override `JWT_SECRET`, `DB_PASSWORD` and the seed password for any shared deployment.**
+`docker-compose.yml` contains no secrets. The JWT secret is generated at startup when not provided, and the only built-in values are the local database credentials and the documented demo login, so `docker compose up` needs no setup. **Set `JWT_SECRET`, `DB_PASSWORD` and the seed password for any shared deployment.**
 
 ---
 
@@ -287,6 +288,7 @@ The full stack was also verified by hand in Chrome through `docker compose` and 
 - **One line item per invoice** in the API and form, as the spec requires. The data model and calculator already support several.
 - **Sorting by total compares raw numbers across currencies.** The spec defines no exchange rates.
 - **No refresh tokens:** the session ends when the access token expires (default 1 hour) and the user signs in again.
+- **Generated JWT secret:** when Docker is run without `JWT_SECRET`, restarting the backend signs everyone out. Set `JWT_SECRET` in `.env` to keep sessions across restarts.
 - **Rate limiting is in memory**, so it is per API instance. Clients inside the private network could spoof `X-Forwarded-For`; public clients cannot.
 - **Frontend tests use a fake API (MSW), not a browser-automation suite** such as Playwright. The real stack was verified manually.
 - **No update, delete or list-of-users endpoints**, and no user registration. They are out of scope.
