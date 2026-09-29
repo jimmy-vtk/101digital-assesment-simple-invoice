@@ -1,20 +1,14 @@
-import { INestApplication } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
-import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import bcrypt from 'bcryptjs';
 import request from 'supertest';
-import type { App } from 'supertest/types';
-import { DataSource } from 'typeorm';
-import { configureApp } from '../src/app.setup';
 import { User } from '../src/users/user.entity';
+import { startTestApp, TestApp } from './helpers/test-app';
 
 /**
- * Full-stack API tests: real NestJS app, real PostgreSQL (Testcontainers),
- * real migrations. Requires Docker.
+ * API behaviour tests: real NestJS app, real PostgreSQL (Testcontainers),
+ * real migrations, with data created by the tests themselves. Requires Docker.
  */
 describe('SimpleInvoice API (e2e)', () => {
-  let container: StartedPostgreSqlContainer;
-  let app: INestApplication<App>;
+  let testApp: TestApp;
   let token: string;
 
   const credentials = { email: 'e2e@simpleinvoice.dev', password: 'E2e-Password!' };
@@ -32,32 +26,12 @@ describe('SimpleInvoice API (e2e)', () => {
     ...overrides,
   });
 
-  const api = () => request(app.getHttpServer());
+  const api = () => request(testApp.app.getHttpServer());
   const auth = () => ({ Authorization: `Bearer ${token}` });
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine').start();
-    Object.assign(process.env, {
-      NODE_ENV: 'test',
-      DB_HOST: container.getHost(),
-      DB_PORT: String(container.getPort()),
-      DB_USERNAME: container.getUsername(),
-      DB_PASSWORD: container.getPassword(),
-      DB_NAME: container.getDatabase(),
-      JWT_SECRET: 'e2e-secret-that-is-at-least-32-characters-long',
-      JWT_EXPIRES_IN: '3600',
-    });
-
-    // Loaded after env is set: ConfigModule validates env when AppModule loads.
-    const { AppModule } = require('../src/app.module') as typeof import('../src/app.module');
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
-    app = moduleRef.createNestApplication();
-    configureApp(app);
-    await app.init();
-
-    const dataSource = app.get(DataSource);
-    await dataSource.runMigrations();
-    await dataSource.getRepository(User).save({
+    testApp = await startTestApp();
+    await testApp.dataSource.getRepository(User).save({
       email: credentials.email,
       passwordHash: await bcrypt.hash(credentials.password, 4),
       fullname: 'E2E User',
@@ -65,8 +39,7 @@ describe('SimpleInvoice API (e2e)', () => {
   });
 
   afterAll(async () => {
-    await app?.close();
-    await container?.stop();
+    await testApp?.close();
   });
 
   describe('authentication', () => {
