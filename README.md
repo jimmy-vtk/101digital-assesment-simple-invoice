@@ -27,8 +27,8 @@ Users sign in, browse invoices (search, filter, sort, paginate), open an invoice
 Requires Docker with Compose v2.
 
 ```bash
-git clone https://github.com/jimmy-vtk/101digital-assesment.git
-cd 101digital-assesment
+git clone https://github.com/jimmy-vtk/101digital-assesment-simple-invoice.git
+cd 101digital-assesment-simple-invoice
 docker compose up --build        # legacy Compose: docker-compose up --build
 ```
 
