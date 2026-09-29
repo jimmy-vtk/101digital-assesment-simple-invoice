@@ -58,7 +58,11 @@ export function useInvoiceQueryParams() {
   const [searchParams, setSearchParams] = useSearchParams();
   const query = useMemo(() => parseInvoiceQuery(searchParams), [searchParams]);
 
-  /** Applies changes; any change other than paging returns to page 1. */
+  /**
+   * Applies changes; any change other than paging returns to page 1.
+   * Each change is a history entry (Back undoes it), except keyword edits,
+   * which replace the entry so a typed search doesn't add one per pause.
+   */
   const update = useCallback(
     (changes: Partial<InvoiceQuery>) => {
       const next: InvoiceQuery = { ...query, ...changes };
@@ -70,15 +74,12 @@ export function useInvoiceQueryParams() {
         if (value === DEFAULT_QUERY[key as keyof InvoiceQuery]) continue;
         params.set(key, String(value));
       }
-      setSearchParams(params, { replace: true });
+      setSearchParams(params, { replace: 'keyword' in changes });
     },
     [query, setSearchParams],
   );
 
-  const reset = useCallback(
-    () => setSearchParams(new URLSearchParams(), { replace: true }),
-    [setSearchParams],
-  );
+  const reset = useCallback(() => setSearchParams(new URLSearchParams()), [setSearchParams]);
 
   const hasFilters = Boolean(query.keyword || query.status || query.fromDate || query.toDate);
 

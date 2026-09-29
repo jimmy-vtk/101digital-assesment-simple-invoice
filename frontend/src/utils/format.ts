@@ -23,14 +23,12 @@ export function formatDate(date: string): string {
   return `${Number(match[3])} ${month} ${match[1]}`;
 }
 
-const dateTimeFormat = new Intl.DateTimeFormat('en-GB', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-});
-
+/** ISO timestamp -> `3 Jun 2026, 19:03` in the user's local timezone (same month style as formatDate). */
 export function formatDateTime(iso: string): string {
-  const parsed = new Date(iso);
-  return Number.isNaN(parsed.getTime()) ? iso : dateTimeFormat.format(parsed);
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 /** Today's date as `YYYY-MM-DD` in the user's local timezone (for date inputs). */

@@ -1,14 +1,21 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, useLocation } from 'react-router';
+import { useEffect } from 'react';
+import { MemoryRouter, useLocation, useNavigate, type NavigateFunction } from 'react-router';
 import { AppProviders } from '../AppProviders';
 import { createQueryClient } from '../queryClient';
 import { AppRoutes } from '../AppRoutes';
 import { tokenStorage } from '../auth/tokenStorage';
 
-/** Exposes the current URL so tests can assert navigation. */
+let navigateRef: NavigateFunction | undefined;
+
+/** Exposes the current URL (and history navigation) so tests can assert routing. */
 function LocationProbe() {
   const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    navigateRef = navigate;
+  }, [navigate]);
   return <div data-testid="location">{`${location.pathname}${location.search}`}</div>;
 }
 
@@ -32,5 +39,11 @@ export function renderApp(route = '/', { signedIn = true } = {}) {
       </MemoryRouter>
     </AppProviders>,
   );
-  return { ...result, user, location: () => screen.getByTestId('location').textContent };
+  return {
+    ...result,
+    user,
+    location: () => screen.getByTestId('location').textContent,
+    /** Simulates the browser Back button. */
+    goBack: () => act(() => navigateRef?.(-1)),
+  };
 }

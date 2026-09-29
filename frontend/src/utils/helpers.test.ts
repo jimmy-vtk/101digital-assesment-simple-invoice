@@ -5,7 +5,7 @@ import {
   toCreateInvoiceRequest,
 } from '../invoices/createInvoiceSchema';
 import { parseInvoiceQuery } from '../invoices/useInvoiceQueryParams';
-import { addDays, formatDate, formatMoney } from './format';
+import { addDays, formatDate, formatDateTime, formatMoney } from './format';
 
 describe('formatting', () => {
   it('formats money with the invoice currency symbol', () => {
@@ -18,6 +18,11 @@ describe('formatting', () => {
     expect(formatDate('2026-06-03')).toBe('3 Jun 2026');
     expect(formatDate('2026-09-30')).toBe('30 Sep 2026');
     expect(formatDate('not-a-date')).toBe('not-a-date');
+  });
+
+  it('formats timestamps with the same month style, in local time', () => {
+    const local = new Date(2026, 5, 3, 19, 3);
+    expect(formatDateTime(local.toISOString())).toBe('3 Jun 2026, 19:03');
   });
 
   it('adds days across month boundaries', () => {

@@ -95,6 +95,23 @@ describe('InvoiceListPage', () => {
     expect(lastRequest().get('page')).toBe('1');
   });
 
+  it('lets the browser Back button undo filter and sort changes', async () => {
+    const { user, location, goBack } = renderApp('/');
+    await screen.findByRole('table', { name: 'Invoices' });
+
+    await user.click(screen.getByRole('combobox', { name: 'Status' }));
+    await user.click(screen.getByRole('option', { name: 'Paid' }));
+    await waitFor(() => expect(location()).toBe('/?status=Paid'));
+    await user.click(screen.getByRole('button', { name: 'Total amount' }));
+    await waitFor(() => expect(location()).toBe('/?sortBy=totalAmount&status=Paid'));
+
+    await goBack();
+    await waitFor(() => expect(location()).toBe('/?status=Paid'));
+    await goBack();
+    await waitFor(() => expect(location()).toBe('/'));
+    expect(screen.getByRole('combobox', { name: 'Status' })).not.toHaveTextContent('Paid');
+  });
+
   it('changes the page size', async () => {
     const { user } = renderApp('/');
     await screen.findByRole('table', { name: 'Invoices' });

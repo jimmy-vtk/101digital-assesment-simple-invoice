@@ -22,6 +22,9 @@ import type { InvoiceDetail } from '../api/types';
 import { StatusChip } from '../components/StatusChip';
 import { formatDate, formatDateTime, formatMoney } from '../utils/format';
 
+/** Columns shown from the `sm` breakpoint up. */
+const wideOnly = { display: { xs: 'none', sm: 'table-cell' } } as const;
+
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
@@ -188,17 +191,35 @@ function InvoiceDetailView({ invoice }: { invoice: InvoiceDetail }) {
             <TableHead>
               <TableRow>
                 <TableCell>Item</TableCell>
-                <TableCell align="right">Quantity</TableCell>
-                <TableCell align="right">Rate</TableCell>
+                <TableCell align="right" sx={wideOnly}>
+                  Quantity
+                </TableCell>
+                <TableCell align="right" sx={wideOnly}>
+                  Rate
+                </TableCell>
                 <TableCell align="right">Amount</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {invoice.items.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell>{item.name}</TableCell>
-                  <TableCell align="right">{item.quantity}</TableCell>
-                  <TableCell align="right">{money(item.rate)}</TableCell>
+                  <TableCell>
+                    {item.name}
+                    {/* On phones, quantity × rate sits under the name instead of in columns. */}
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ display: { xs: 'block', sm: 'none' } }}
+                    >
+                      {item.quantity} × {money(item.rate)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="right" sx={wideOnly}>
+                    {item.quantity}
+                  </TableCell>
+                  <TableCell align="right" sx={wideOnly}>
+                    {money(item.rate)}
+                  </TableCell>
                   <TableCell align="right">{money(item.amount)}</TableCell>
                 </TableRow>
               ))}
